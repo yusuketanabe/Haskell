@@ -53,3 +53,52 @@ circumference' r = 2 * pi * r
 {- Read型クラス -> showの対をなす型クラス。文字列を受け取り、readのインスタンスの型の値を返す。Read a => String -> a -}
 {- read "4"と書いたのでは型を推論できないので何を返せばいいのかわからずエラーとなる。問題を解決するためには”型注釈”を用いる。
 式の終わりに::を追記し明示的に型を教えてあげる手段。例）read "5" :: Int -}
+
+{- Enum型クラス -> 順番に並んだ型、つまり要素の値を列挙できる型。例）['a'..'e'], succ 'B'（後者関数）, pred 'C'（前者関数） -}
+
+{- Bounded型クラス -> 上限下限を持ちそれぞれminBound, maxBound関数で調べることができる。maxBound :: Bounded a => a　という型を持っている。いわば多相定数。 -}
+{- maxBound :: (Bool, Int, Char) -> (True, 2147483647, '\1114111')　タプル全ての構成要素がBoundedインスタンスならばタプル自身もBoundedになる。 -}
+
+{- Num型クラス -> 数の型クラス。1, 2, 3(:t 20 -> 20 :: Num a => a　多相定数として表現されていてNum型クラスの任意のインスタンス[Int, Integer, Float, Double]として
+振る舞うことができる。) -}
+{- *(２つの数を受け取って１つの数を返すNum型クラス、これら３つの数は全て同じ型であることを示す。)
+なので、(5 :: Int) * (6 :: Integer)は型エラーになり、5 * (6 :: Integer)は正しく動く。５はIntegerやIntとして振る舞うことができるが同時に両方にはなれない。 -}
+
+{- Float型クラス -> FloatとDoubleが含まれる。浮動小数点数に使う。sin、cos、sqrt -}
+
+{- Integral型クラス -> 数の型クラス。Numが実数を含む全ての数を含む一方、Integralには整数（全体）のみが含まれる。Int、Integer、fromIntegral(fromIntegral :: (Integral a, Num b) => a -> b
+複数の型クラス制約があることに注目。複数の型クラス制約を書くときはカンマ（,）で区切って括弧で囲む。) -}
+{- fromIntegralは何らかの整数を引数に取り、もっと一般的な数を返す。整数と浮動小数点数を一緒に使いたい時にとても役たつ。
+例えば、length関数はa -> Intのような型宣言を持っています。そのためリストの長さを取得してそれに3.2を加えるような式はエラーになる。（IntとFloatを足し合わせるため。）
+それを解決するためにflomIntegralを使ってこうする。fromIntegral (length [1,2,3,4]) + 3.2 -> 7.2 -}
+
+{- パターンマッチ -> パターンは上から下の順に試される-}
+lucky :: Int -> String
+lucky 7 = "LUCKY NUMBER SEVEN!"
+lucky x = "Sorry, you're out of luck,pal!"
+
+{- それぞれ数字を文字で出力しそれ以外を別の文章で出力する -}
+{- パターンマッチ版 -}
+sayMe :: Int -> String
+sayMe 1 = "One!"
+sayMe 2 = "Two!"
+sayMe 3 = "Three!"
+sayMe 4 = "Four!"
+sayMe 5 = "Five!"
+sayMe x = "Not between 1 and 5"
+
+{- if/then/else版 -}
+sayMe' :: Int -> String
+sayMe' x = if x == 1 then "One!"
+  else if x == 2 then "Two!"
+  else if x == 3 then "Three!"
+  else if x == 4 then "Four!"
+  else if x == 5 then "Five!"
+  else "Not between 1 and 5"
+{- ポイントはパターンマッチの方が単純に書ける点と"Not bet..."を先頭に持ってこないこと。先頭に持ってきた場合この関数は常に"Not bet..."を出力する。 -}
+
+{- 階乗 product[1..n]を再帰的（その関数の定義の中で自分自身を呼び出す）に定義する。
+まず「０の階乗は１」と定義。次に「すべての正の整数の階乗は、その整数とそれから１を引いたものの階乗の積」と定義。 -}
+factorial' :: Int -> Int
+factorial' 0 = 1
+factorial' n = n * factorial' (n - 1)
