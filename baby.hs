@@ -5,6 +5,8 @@ doubleSmallNumber x = if x > 100 then x else x*2
 doubleSmallNumber' x = (if x > 100 then x else x*2) + 2
 
 a'B = "A'B cd"
+
+
 {- リスト内包表記 -}
 boomBangs xs = [ if x < 10 then "BOOM!" else "BANG!" | x <- xs, odd x, x /= 9] {- odd(奇数) even(偶数)-}
 
@@ -29,6 +31,7 @@ zip [1..] ['a'..'e']　無限リストと有限リストをzipすることもで
 含まれてしまうので。） -> 周囲の長さが２４のものだけを出力 -}
 triangles = [(a,b,c) | c <- [1..10], a <- [1..c], b <- [1..a], a^2 + b^2 == c^2, a+b+c == 24]
 
+
 {- Haskellの型について -}
 factorial :: Integer -> Integer {- Integer（有界ではない 7.2）、Int（有界である 7） -}
 factorial n = product [1..n] {- product（階乗をする関数） -}
@@ -38,6 +41,7 @@ circumference r = 2 * pi * r {- 円周を求める式 -}
 
 circumference' :: Double -> Double {- Double（倍精度浮動小数点数。Floatの2倍。） -}
 circumference' r = 2 * pi * r
+
 
 {- 型クラス -}
 {- ghci> :t (==) 「型を調べたい場合、他の関数に渡したい場合、前置関数として呼び出したい場合は（）で囲む」
@@ -72,6 +76,7 @@ circumference' r = 2 * pi * r
 例えば、length関数はa -> Intのような型宣言を持っています。そのためリストの長さを取得してそれに3.2を加えるような式はエラーになる。（IntとFloatを足し合わせるため。）
 それを解決するためにflomIntegralを使ってこうする。fromIntegral (length [1,2,3,4]) + 3.2 -> 7.2 -}
 
+
 {- パターンマッチ -> パターンは上から下の順に試される-}
 lucky :: Int -> String
 lucky 7 = "LUCKY NUMBER SEVEN!"
@@ -102,3 +107,36 @@ sayMe' x = if x == 1 then "One!"
 factorial' :: Int -> Int
 factorial' 0 = 1
 factorial' n = n * factorial' (n - 1)
+
+{- パターンマッチ失敗例 -}
+charName :: Char -> String
+charName 'a' = "Albert"
+charName 'b' = "Broseph"
+charName 'c' = "Cecil"
+{- この関数は予期しない値が入力されるとエラーとなる。 -}
+{- ghci> charName 'h'などa,b,c以外でエラー。Non-exhaustive patterns（パターンが網羅的でない） -}
+charName x = "UNKNOWN"{- これでエラーを回避できる。 -}
+
+{- タプルのパターンマッチ -}
+{- パターンマッチでない場合 -}
+addVectors :: (Double, Double) -> (Double, Double) -> (Double, Double)
+addVectors a b = (fst a + fst b, snd a + snd b)
+{- aというタプルの最初の値（２番目の値）と、bというタプルの最初の値（２番目の値）を足す関数。引数がaとかbとかじゃなんなのか解らない（タプルなのに）。 -}
+{- これをパターンマッチを使って置き換える。↓ -}
+addVectors' :: (Double, Double) -> (Double, Double) -> (Double, Double)
+addVectors' (x1, y1) (x2, y2) = (x1 + x2, y1 + y2)
+{- こちらの方が引数がタプルであることがわかりやすく、タプルの要素に適切な名前が付いているので読みやすい。これで全てに合致するパターンになっている。 -}
+{- Doubleのペアが２つ引数に来ることは保証済み。 -}
+{- fst, sndとペアの要素を分解できるがトリプルに対しては？トリプル以降は独自に定義する。 -}
+first :: (a, b, c, d) -> a
+first (x, _, _, _) = x
+
+second :: (a, b, c, d) -> b
+second (_, y, _, _) = y
+
+third :: (a, b, c, d) -> c
+third (_, _, z, _) = z
+
+fourth :: (a, b, c, d) -> d
+fourth (_, _, _, s) = s
+{- リスト内包表記の時にも触れたが、_は使い捨ての変数を表すために用いる。 -}
