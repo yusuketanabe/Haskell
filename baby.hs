@@ -171,3 +171,48 @@ badAdd (x:y:z:[]) = x + y + z
 {- ３要素以外はエラーになる。 -}
 {- リストに対するパターンマッチの注意として++演算子（二つをつなげる演算子）は使えないということ。例えばパターン(xs ++ ys)に対して合致させようにも、
   リストのどの部分をxsに合致させて、どの部分をysに合致させればいいかHaskellに伝えようがないから。-}
+
+{- asパターン -> パターンを分解しつつ、パターンマッチの対象になった値自体も参照にしたい時に使う。普通のパターンの前に名前と@を追加する。 -}
+{- xs@(x:y:ys)のようなasパターンを作れる。x:y:ysに合致するものと全く同じものに合致しつつ、x:y:ysとタイプしなくても、xsで元のリスト全体にアクセスすることもできる。 -}
+firstLetter :: String -> String
+firstLetter "" = "Empty string, whoops!"
+firstLetter all@(x:xs) = "The first letter of " ++ all ++ " is " ++ [x]{- x -> 'D', y -> 'r' -}
+{- *Main> firstLetter "Dracula"
+  "The first letter of Dracula is D" -}
+
+
+{- 場合分けして、きっちりガード！ -> 関数を定義する際、引数の構造で場合分けする時にはパターンを使う。引数の値が満たす性質で場合分けする時には、ガードを使う。性質で場合分け
+　　とういう点でifとガードは似ている。ただし、複数の条件がある時にはガードの方がifより可読性が高く、パターンマッチとの相性も抜群。 -}
+
+{- BMIを計算する関数ではなく、計算済みのBMIを受け取って忠告するだけの関数。Doubleだと数が多くて面倒なのでFloatに変更。 -}
+bmiTell :: Float -> String
+bmiTell bmi
+  | bmi <= 18.5 = "You're underweight, you emo, you!"
+  | bmi <= 25.0 = "You're supposedly normal. Pffft, I bet you're ugly!"
+  | bmi <= 30.0 = "You're fat! Lose some weight, fatty!"
+  | otherwise   = "You're a whale, congratulation!"
+{- ガードには、パイプ文字（|）とそれに続く真理値式、さらにその式がTrueに評価された時に使われる関数の本体が続く。
+　　式がFalseに評価されたら、その次のガードの評価に移る。この繰り返し。インデントする。
+　　関数の定義からして、長いif/elseの連鎖になるような書き方が避けられない場合などはifよりガードを使うと可読性が高い。
+　　大抵関数の最後のガードは全てをキャッチするotherwiseになっている。全てのガードがFalseに評価されて最後にotherwiseもなかったなら
+　　評価は失敗して次のパターンに移る。（これがパターンとガードの相性が悪い理由。）適切なパターンが見つからなければエラーが投げられる。 -}
+
+{- 身長と体重を受け取ってBMIの計算もするように変更した関数。プラス、show関数でBMIの結果も表示するようにした。 -}
+bmiTell' :: Float -> Float -> String
+bmiTell' weight height
+  | weight / height ^ 2 <= 18.5 = show (weight / height ^ 2) ++ "! You're underweight, you emo, you!"
+  | weight / height ^ 2 <= 25.0 = show (weight / height ^ 2) ++ ". You're supposedly normal. Pffft , I bet you're ugly!"
+  | weight / height ^ 2 <= 30.0 = show (weight / height ^ 2) ++ "? You're fat! Lose some weight, fatty!"
+  | otherwise                   = show (weight / height ^ 2) ++ "!? You're whale, congratulation!"
+
+{- max関数（大小比較Ord型クラス）を独自に定義。 -}
+max' :: (Ord a) => a -> a -> a
+max' a b
+  | a <= b    = b
+  | otherwise = a
+
+{- compare関数（同じく比較）を独自に定義。 -}
+a `myCompare` b
+  | a == b    = EQ {- a is EQual to b -}
+  | a <= b    = LT {- a is Less Than b -}
+  | otherwise = GT {- a is Greater Than b -}
