@@ -216,3 +216,4 @@ a `myCompare` b
   | a == b    = EQ {- a is EQual to b -}
   | a <= b    = LT {- a is Less Than b -}
   | otherwise = GT {- a is Greater Than b -}
+  
