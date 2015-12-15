@@ -176,7 +176,7 @@ badAdd (x:y:z:[]) = x + y + z
 {- xs@(x:y:ys)のようなasパターンを作れる。x:y:ysに合致するものと全く同じものに合致しつつ、x:y:ysとタイプしなくても、xsで元のリスト全体にアクセスすることもできる。 -}
 firstLetter :: String -> String
 firstLetter "" = "Empty string, whoops!"
-firstLetter all@(x:xs) = "The first letter of " ++ all ++ " is " ++ [x]{- x -> 'D', y -> 'r' -}
+firstLetter all@(x:y:xs) = "The first letter of " ++ all ++ " is " ++ [x]{- x -> 'D', y -> 'r' -}
 {- *Main> firstLetter "Dracula"
   "The first letter of Dracula is D" -}
 
@@ -191,7 +191,7 @@ bmiTell bmi
   | bmi <= 25.0 = "You're supposedly normal. Pffft, I bet you're ugly!"
   | bmi <= 30.0 = "You're fat! Lose some weight, fatty!"
   | otherwise   = "You're a whale, congratulation!"
-{- ガードには、パイプ文字（|）とそれに続く真理値式、さらにその式がTrueに評価された時に使われる関数の本体が続く。
+{- ガードには、パイプ文字（|）とそれに続く『真理値式』、さらにその式がTrueに評価された時に使われる関数の本体が続く。
 　　式がFalseに評価されたら、その次のガードの評価に移る。この繰り返し。インデントする。
 　　関数の定義からして、長いif/elseの連鎖になるような書き方が避けられない場合などはifよりガードを使うと可読性が高い。
 　　大抵関数の最後のガードは全てをキャッチするotherwiseになっている。全てのガードがFalseに評価されて最後にotherwiseもなかったなら
@@ -216,4 +216,68 @@ a `myCompare` b
   | a == b    = EQ {- a is EQual to b -}
   | a <= b    = LT {- a is Less Than b -}
   | otherwise = GT {- a is Greater Than b -}
-  
+
+{- where -}
+{- 上のBMI計算関数を繰り返しを避けるため、whereキーワードを使って変数に値を束縛して無駄を省く。 -}
+bmiTell2 :: Float -> Float -> String
+bmiTell2 weight height
+  | bmi <= skinny = show bmi ++ "! You're underweight, you emo, you!"
+  | bmi <= normal = show bmi ++ ". You're supposedly normal. Pffft , I bet you're ugly!"
+  | bmi <= fat    = show bmi ++ "? You're fat! Lose some weight, fatty!"
+  | otherwise     = show bmi ++ "!? You're whale, congratulation!"
+  where bmi = weight / height ^ 2
+        skinny = 18.5
+        normal = 25.0
+        fat    = 30.0
+{- whereの束縛の中でもパターンマッチを使うことができる。where節を次のように書ける。
+  where bmi = weight / height ^ 2
+        (skinny, normal, fat) = (18.5, 25.0, 30.0) -}
+{- BMIの計算方法を変えたくなっても一箇所を変えるだけで済む。それから値に名前がつくので可読性も上がり、値が一度しか計算されないのでプログラムが早くなる。 -}
+{- whereブロックの中の全ての変数のインデントは揃える。ずれるとHaskellが混乱してしまい、ブロックの範囲を正しく認識してくれない。 -}
+
+{- whereのスコープ -> where節で定義した変数は、その関数からしか見えないので、他の関数の名前空間を汚染する心配がない。
+  複数の異なる関数から見える必要のある変数を定義したい場合は、グローバルに定義する必要がある。また、whereによる束縛は関数の違うパターンの本体では共有されない。 -}
+{- 名前を引数に取り、その名前を認識できた場合には上品な挨拶を、そうでなければ下品な挨拶を返す関数。
+　greet :: String -> String
+  greet "Juan" = niceGreeting ++ " Juan!"
+  greet "Fernando" = niceGreeting ++ " Fernando!"
+  greet name = badGreeting ++ " " ++ name
+    where niceGreeting = "Hello! So very nice to see you,"
+          badGreeting  = "Oh! Pfft. It's you."
+  この関数は書いた通りには動かない。whereの束縛は違うパターンの関数本体で共有されず、whereの束縛での名前は最後の本体からしか見えないから。
+  この関数を正しく動くようにするには、badとniceはグローバルに定義しなくてはならない。 -}
+badGreeting :: String
+badGreeting = "Oh! Pfft. It's you."
+
+niceGreeting :: String
+niceGreeting = "Hello! So very nice to see you,"
+
+greet :: String -> String
+greet "Juan" = niceGreeting ++ " Juan!"
+greet "Fernando" = niceGreeting ++ " Fernando!"
+greet name = badGreeting ++ " " ++ name
+
+{- 論理和(A||B,AがTrueの時常にTrue、AがFalseの時Bに等しい、Aがundefinedの時常にundefined。) -}
+logicalSum :: Int -> Int -> String
+logicalSum x y = if x == 1 then "1"
+  else if x == 0 then show y
+  else "Undefined" {- x == undefined -> undefined -}
+
+{- 論理積(A&&B,AがTrueの時Bに等しい、AがFalseの時常にFalse、Aがundefinedの時常にundefined。) -}
+logicalProduct :: Int -> Int -> String
+logicalProduct x y = if x == 1 then show y
+  else if x == 0 then "0"
+  else "Undefined" {- x == undefined -> undefined -}
+
+{- 曜日計算関数(x日と7の剰余) -}
+dayofFuture :: Int -> String
+dayofFuture x
+  | dayCalc == 0 = "Sunday"
+  | dayCalc == 1 = "Monday"
+  | dayCalc == 2 = "Tuesday"
+  | dayCalc == 3 = "Wednesday"
+  | dayCalc == 4 = "Thursday"
+  | dayCalc == 5 = "Friday"
+  | dayCalc == 6 = "Saturday"
+  | otherwise    = "Woops!"
+  where dayCalc = x `mod` 7
