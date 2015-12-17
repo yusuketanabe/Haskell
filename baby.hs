@@ -229,9 +229,6 @@ bmiTell2 weight height
         skinny = 18.5
         normal = 25.0
         fat    = 30.0
-{- whereの束縛の中でもパターンマッチを使うことができる。where節を次のように書ける。
-  where bmi = weight / height ^ 2
-        (skinny, normal, fat) = (18.5, 25.0, 30.0) -}
 {- BMIの計算方法を変えたくなっても一箇所を変えるだけで済む。それから値に名前がつくので可読性も上がり、値が一度しか計算されないのでプログラムが早くなる。 -}
 {- whereブロックの中の全ての変数のインデントは揃える。ずれるとHaskellが混乱してしまい、ブロックの範囲を正しく認識してくれない。 -}
 
@@ -281,3 +278,70 @@ dayofFuture x
   | dayCalc == 6 = "Saturday"
   | otherwise    = "Woops!"
   where dayCalc = x `mod` 7
+
+{- パターンマッチとwhere -}
+{- whereの束縛の中でもパターンマッチを使うことができる。上のBMI関数のwhere節を次のように書ける。
+  where bmi = weight / height ^ 2
+        (skinny, normal, fat) = (18.5, 25.0, 30.0) -}
+
+{- ファーストネームとラストネームを受け取ってイニシャルを返す関数（関数を呼び出す際に名前を""をつけずに引数として書いてしまいエラー。文字列なので"Yusuke" "Tanabe"
+　としないとダメ。）エラー"Not in scope: 'Yusuke' -> 変数が見当たらない。" -}
+initials :: String -> String -> String
+initials firstname lastname = [f] ++ ". " ++ [l] ++ "."
+  where (f:_) = firstname
+        (l:_) = lastname
+{- 下の例のように関数の引数のところで直接パターンマッチすることもでき、その方が短くて可読性も高くなる可能性があるが、この上の例のようにwhereの束縛でもパターンマッチが使える。 -}
+initials' :: String -> String -> String
+initials' (f:_) (l:_) = [f] ++ ". " ++ [l] ++ "."
+
+{- whereブロックの中では定数だけではなく関数も定義できる。体重と身長のペアのリスト[(Double,Double)]を受け取ってBMIのリスト[Double]を返す関数。 -}
+{- この例でbmiを定数ではなく関数として導入したのは、calcBmis関数の引数に対して１つのBMIを計算するのではなく、関数に渡されたリストの要素それぞれに
+　対して、異なるBMIを計算する必要があるから。 -}
+calcBmis :: [(Double,Double)] -> [Double]
+calcBmis xs = [bmi w h | (w, h) <- xs]
+  where bmi weight height = weight / height ^ 2
+{- *Main> calcBmis[(55, 1.74),(95,1.65)]
+  [18.166204254194742,34.894398530762174] -}
+
+{- let It Be -> let式はwhere節に似ている。whereは関数の終わりで変数を束縛し、その変数はガードを含む関数全体から見える。
+　それに対してlet式はどこでも変数を束縛でき、let自身も式になる。しかし、let式が作る束縛は局所的で、ガード間で共有されない。
+　let式でもパターンマッチが使える。 -}
+{- 円柱の表面積を高さと半径から求める関数 -}
+cylinder :: Double -> Double -> Double
+cylinder r h =
+  let sideArea = 2 * pi * r * h
+      topArea = pi * r ^ 2
+  in sideArea + 2 * topArea
+{- let式は let bindings in expressionという形をとる。letで定義した変数はそのlet式全体から見える。もちろんwhereでも同じものが定義できる。
+  letとwhereの違いとは？let式はその名の通り「式」で、where節はそうじゃないというところ。「式である」ということはそれが「値を持つ」ということ。
+  つまりlet式はコード中のほとんどどんな場所でも使えるということ。使い方の例　↓ -}
+
+{- letはローカルスコープに関数を作るのに使える
+  ghci> [let square x = x * x in (square 5, square 3, square 2)]
+  [(25,9,4)] -}
+
+{- letではセミコロン(;)区切りを使える。インデントみたいに間延びした構文を使わずにすみ、複数の変数を一行で束縛したい時に便利。
+  ghci> (let a = 100; b = 200; c = 300 in a*b*c, let foo = "Hey "; bar = "there!" in foo ++ bar)
+  (6000000,"Hey there!") -}
+
+{- let式とパターンマッチがあれば、あっという間にタプルを要素に分解してそれぞれ名前に束縛できる
+  ghci> (let (a, b, c) = (1, 2, 3) in a+b+c) * 100
+  600
+  ここではトリプル(1,2,3)を分解するのにletを使った。最初の要素をa、２つ目の要素をb、３つ目の要素をcと読んでいる。in a+b+cの部分は、
+  let式全体が値a+b+cを持つ、と言っている。最後にその値に100をかけている。 -}
+
+{- 使い勝手がいいものの、いつでもlet式を使えばいいとは言えない。まずlet式は「式」であり、そのスコープに局所的なので、ガードをまたいでは
+  使えない。また、関数の前ではなく後ろで部品を定義することで、関数の本体が名前と型宣言に近くなりコードが読みやすくなるのでwhereを使う人もいる。 -}
+
+{- リスト内包表記でのlet -}
+{- BMI計算する例をwhereで関数を定義するのではなく、リスト内包表記中のletを使って書き換えてみる。 -}
+calcBmis' :: [(Double, Double)] -> [Double]
+calcBmis' xs = [bmi | (w, h) <- xs, let bmi = w / h ^2]
+{- リスト内包表記が元のリストからタプルを受け取り、その要素をwとhに束縛するたびに、let式はw / h ^ 2を変数bmiに束縛する。
+  それからbmiをリスト内包表記の出力として書き出しているだけ。 -}
+{- リスト内包表記の中のletを述語のように使っているが、これはリストをフィルタするわけではなく、名前を束縛しているだけ。letで定義された名前は
+  出力（|より前の部分）とそのletより後ろのリスト内包表記のすべてから見える。ただ、ジェネレータと呼ばれるリスト内包表記の(w,h) <- xsの部分は
+  letの束縛よりも前に定義されているので、変数bmiはジェネレータからは参照できない。このテクニックを使って肥満な人のBMIのみを
+  返すように関数を変えてみる。　-}
+calcBmis'' :: [(Double,Double)] -> [Double]
+calcBmis'' xs = [bmi | (w,h) <- xs, let bmi = w / h ^ 2, bmi > 25.0]
